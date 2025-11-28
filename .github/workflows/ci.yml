@@ -22,10 +22,10 @@ jobs:
           dotnet-version: 7.0.x
 
       - name: Restore dependencies
-        run: dotnet restore ./backend/MyService.Api/MyService.Api.csproj
+        run: dotnet restore ./backend/Training-tracker-backend/API/API.csproj
 
       - name: Build
-        run: dotnet build ./backend/MyService.Api/MyService.Api.csproj --no-restore --configuration Release
+        run: dotnet build ./backend/Training-tracker-backend/API/API.csproj --no-restore --configuration Release
 
       - name: Run Tests
-        run: dotnet test ./backend/MyService.Tests/MyService.Tests.csproj --no-build --verbosity normal
+        run: dotnet test ./backend/Training-tracker-backend/API/API.csproj --no-build --verbosity normal

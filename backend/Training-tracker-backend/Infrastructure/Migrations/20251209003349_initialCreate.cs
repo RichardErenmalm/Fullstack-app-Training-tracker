@@ -5,7 +5,7 @@
 namespace Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    public partial class initialCreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -91,14 +91,15 @@ namespace Infrastructure.Migrations
                 name: "WorkoutExercises",
                 columns: table => new
                 {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Sets = table.Column<int>(type: "int", nullable: false),
                     WorkoutId = table.Column<int>(type: "int", nullable: false),
-                    ExerciseId = table.Column<int>(type: "int", nullable: false),
-                    Id = table.Column<int>(type: "int", nullable: false),
-                    Sets = table.Column<int>(type: "int", nullable: false)
+                    ExerciseId = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_WorkoutExercises", x => new { x.WorkoutId, x.ExerciseId });
+                    table.PrimaryKey("PK_WorkoutExercises", x => x.Id);
                     table.ForeignKey(
                         name: "FK_WorkoutExercises_Exercises_ExerciseId",
                         column: x => x.ExerciseId,
@@ -127,6 +128,12 @@ namespace Infrastructure.Migrations
                 name: "IX_WorkoutExercises_ExerciseId",
                 table: "WorkoutExercises",
                 column: "ExerciseId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_WorkoutExercises_WorkoutId_ExerciseId",
+                table: "WorkoutExercises",
+                columns: new[] { "WorkoutId", "ExerciseId" },
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_Workouts_UserId",

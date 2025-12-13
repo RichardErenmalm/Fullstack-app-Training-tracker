@@ -11,8 +11,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251127203638_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20251209003349_initialCreate")]
+    partial class initialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -122,21 +122,27 @@ namespace Infrastructure.Migrations
 
             modelBuilder.Entity("Domain.Models.WorkoutExercise", b =>
                 {
-                    b.Property<int>("WorkoutId")
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<int>("ExerciseId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("Id")
                         .HasColumnType("int");
 
                     b.Property<int>("Sets")
                         .HasColumnType("int");
 
-                    b.HasKey("WorkoutId", "ExerciseId");
+                    b.Property<int>("WorkoutId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
 
                     b.HasIndex("ExerciseId");
+
+                    b.HasIndex("WorkoutId", "ExerciseId")
+                        .IsUnique();
 
                     b.ToTable("WorkoutExercises");
                 });

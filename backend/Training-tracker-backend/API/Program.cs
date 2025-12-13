@@ -1,5 +1,7 @@
 
 using Infrastructure.Database;
+using Infrastructure;
+using Application;
 using Microsoft.EntityFrameworkCore;
 namespace API
 {
@@ -16,8 +18,15 @@ namespace API
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
 
+
+            builder.Services.AddInfrastructure(builder.Configuration);
+            builder.Services.AddApplicationServices();
+
             builder.Services.AddDbContext<AppDbContext>(options =>
             options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+            
+
 
             var app = builder.Build();
 

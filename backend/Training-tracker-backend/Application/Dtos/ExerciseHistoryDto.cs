@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Domain.Models
+namespace Application.Dtos
 {
-    public class ExerciseHistory
+    public class ExerciseHistoryDto
     {
         public int Id { get; set; }
 
@@ -17,13 +17,10 @@ namespace Domain.Models
         public int Reps { get; set; }
 
         public int SetNumber { get; set; }
-        public DateTime DateTime = DateTime.Now;
 
-
-        public int ExerciseId { get; set; }
-        public Exercise? Exercise { get; set; } 
+        public DateTime DateTime { get; set; }
 
         public int UserId { get; set; }
-        public User? User { get; set; } 
+        public int ExerciseId { get; set; }
     }
 }

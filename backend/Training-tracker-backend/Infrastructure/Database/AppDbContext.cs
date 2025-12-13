@@ -24,17 +24,28 @@ namespace Infrastructure.Database
         {
 
             modelBuilder.Entity<WorkoutExercise>()
-                .HasKey(we => new { we.WorkoutId, we.ExerciseId });
+            .HasKey(we => we.Id); // Primärnyckel
+
+            modelBuilder.Entity<WorkoutExercise>()
+                .Property(we => we.Id)
+                .ValueGeneratedOnAdd(); // Auto increment
 
             modelBuilder.Entity<WorkoutExercise>()
                 .HasOne(we => we.Workout)
                 .WithMany(w => w.WorkoutExercises)
-                .HasForeignKey(we => we.WorkoutId);
+                .HasForeignKey(we => we.WorkoutId)
+                .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<WorkoutExercise>()
                 .HasOne(we => we.Exercise)
                 .WithMany(e => e.WorkoutExercises)
-                .HasForeignKey(we => we.ExerciseId);
+                .HasForeignKey(we => we.ExerciseId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<WorkoutExercise>()
+                .HasIndex(we => new { we.WorkoutId, we.ExerciseId })
+                .IsUnique();
+
 
 
 

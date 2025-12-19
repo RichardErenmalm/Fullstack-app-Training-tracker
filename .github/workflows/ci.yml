@@ -27,5 +27,6 @@ jobs:
       - name: Build
         run: dotnet build ./backend/Training-tracker-backend/API/API.csproj --no-restore --configuration Release
 
-      - name: Run Tests
-        run: dotnet test ./backend/Training-tracker-backend/API/API.csproj --no-build --verbosity normal
+      - name: Run tests
+        run: dotnet test ./backend/Training-tracker-backend/Training-tracker.UnitTests/Training-tracker.UnitTests.csproj --no-build
+

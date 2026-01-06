@@ -61,7 +61,7 @@ namespace Application.ModelHandling.ExerciseHistories.Commands.UpdateExerciseHis
             exerciseHistory.WeightKg = request.WeightKg;
             exerciseHistory.Reps = request.Reps;
             exerciseHistory.SetNumber = request.SetNumber;
-            exerciseHistory.DateTime = request.DateTime;
+            exerciseHistory.PerformedAt = request.DateTime;
             exerciseHistory.UserId = request.UserId;
             exerciseHistory.ExerciseId = request.ExerciseId;
 

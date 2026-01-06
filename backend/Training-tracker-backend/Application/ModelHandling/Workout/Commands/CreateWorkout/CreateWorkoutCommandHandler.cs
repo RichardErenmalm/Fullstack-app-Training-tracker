@@ -31,20 +31,28 @@ namespace Application.ModelHandling.Workout.Commands.CreateWorkout
         // Gör så att workoutHistory.Name = workout.Name.
         public async Task<OperationResult<WorkoutDto>> Handle(CreateWorkoutCommand request, CancellationToken cancellationToken)
         {
+            // Kontrollera att användaren finns
             if (!await _userRepository.ExistsAsync(request.UserId))
             {
                 return OperationResult<WorkoutDto>.Failure(
                     $"User with ID {request.UserId} does not exist.");
             }
 
+            // Mappa kommandot till domänmodell
             var workout = _mapper.Map<Domain.Models.Workout>(request);
 
+            workout.User = null;
+
+            // Spara i databasen
             await _workoutRepository.AddWorkoutAsync(workout);
 
+            // Mappa tillbaka till DTO (Observera att AutoMapper måste inkludera Id)
             var result = _mapper.Map<WorkoutDto>(workout);
 
+            // Returnera som Success, med ID
             return OperationResult<WorkoutDto>.Success(result);
         }
+
     }
 
 

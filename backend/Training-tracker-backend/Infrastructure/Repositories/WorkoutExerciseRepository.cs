@@ -70,6 +70,14 @@ namespace Infrastructure.Repositories
         {
             return await _context.Exercises.AnyAsync(u => u.Id == id);
         }
+
+        public async Task<List<WorkoutExercise>> GetWorkoutExercisesByWorkoutIdAsync(int workoutId)
+        {
+            return await _context.WorkoutExercises
+                .Where(we => we.WorkoutId == workoutId)
+                .Include(we => we.Exercise)
+                .ToListAsync();
+        }
     }
 
 }

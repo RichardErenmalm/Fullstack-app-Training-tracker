@@ -17,7 +17,7 @@ namespace Domain.Models
         public int Reps { get; set; }
 
         public int SetNumber { get; set; }
-        public DateTime DateTime = DateTime.Now;
+        public DateTime PerformedAt = DateTime.Now;
 
 
         public int ExerciseId { get; set; }

@@ -9,7 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/Workouts")]
     [ApiController]
     public class WorkoutController : ControllerBase
     {
@@ -36,8 +36,19 @@ namespace API.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> CreateWorkout(CreateWorkoutCommand command) =>
-            Ok(await _mediator.Send(command));
+        public async Task<IActionResult> CreateWorkout(CreateWorkoutCommand command)
+        {
+            var result = await _mediator.Send(command);
+
+            if (!result.IsSuccess)
+                return BadRequest(result.ErrorMessage);
+
+            return CreatedAtAction(
+                nameof(GetWorkoutById),
+                new { id = result.Data.Id },
+                result.Data
+            );
+        }
 
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateWorkout(int id, [FromBody] UpdateWorkoutCommand command)

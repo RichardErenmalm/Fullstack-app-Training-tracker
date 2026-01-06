@@ -47,12 +47,16 @@ namespace Infrastructure.Database
                 .IsUnique();
 
 
+            modelBuilder.Entity<Workout>()
+                .Property(w => w.UserId)
+                .ValueGeneratedNever();
 
 
             modelBuilder.Entity<Workout>()
-                .HasOne(w => w.User)
-                .WithMany(u => u.Workouts)
-                .HasForeignKey(w => w.UserId);
+                 .HasOne(w => w.User)
+                 .WithMany(u => u.Workouts)
+                 .HasForeignKey(w => w.UserId)
+                 .OnDelete(DeleteBehavior.Restrict);
 
 
 

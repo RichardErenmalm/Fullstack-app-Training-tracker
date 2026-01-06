@@ -3,13 +3,14 @@ using Application.ModelHandling.WorkoutExercise.Commands.DeleteWorkoutExercise;
 using Application.ModelHandling.WorkoutExercise.Commands.UpdateWorkoutExercise;
 using Application.ModelHandling.WorkoutExercise.Querries.GetAllWorkoutExercises;
 using Application.ModelHandling.WorkoutExercise.Querries.GetWorkoutExerciseById;
+using Application.ModelHandling.WorkoutExercise.Querries.GetWorkoutExercisesByWorkoutId;
 using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/WorkoutExercises")]
     [ApiController]
     public class WorkoutExerciseController : ControllerBase
     {
@@ -34,6 +35,17 @@ namespace API.Controllers
 
             return Ok(result);
         }
+
+        [HttpGet("workout/{workoutId}")]
+        public async Task<IActionResult> GetWorkoutExercisesByWorkoutId(int workoutId)
+        {
+            var result = await _mediator.Send(
+                new GetWorkoutExercisesByWorkoutIdQuery(workoutId)
+            );
+
+            return Ok(result);
+        }
+
 
         [HttpPost]
         public async Task<IActionResult> CreateWorkoutExercise(CreateWorkoutExerciseCommand command) =>

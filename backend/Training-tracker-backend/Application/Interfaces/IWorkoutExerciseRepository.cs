@@ -19,6 +19,8 @@ namespace Application.Interfaces
         public Task<bool> ExerciseAlreadyAddedToWorkoutUpdateAsync( int workoutId, int ExerciseId, int excludeId);
         Task<bool> WorkoutExistsAsync(int entityId);
         Task<bool> ExerciseExistsAsync(int entityId);
+
+        public Task<List<WorkoutExercise>> GetWorkoutExercisesByWorkoutIdAsync(int workoutId);
     }
 
 }

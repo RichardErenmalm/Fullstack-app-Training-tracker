@@ -28,5 +28,5 @@ jobs:
         run: dotnet build ./backend/Training-tracker-backend/API/API.csproj --no-restore --configuration Release
 
       - name: Run tests
-        run: dotnet test ./backend/Training-tracker-backend/Training-tracker.UnitTests/Training-tracker.UnitTests.csproj --no-build
+        run: dotnet test ./backend/Training-tracker-backend/Training-tracker.UnitTests/Training-tracker.UnitTests.csproj
 

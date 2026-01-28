@@ -15,19 +15,13 @@ namespace Application.ModelHandling.WorkoutExercise.Commands.UpdateWorkoutExerci
     : IRequestHandler<UpdateWorkoutExerciseCommand, OperationResult<WorkoutExerciseDto>>
     {
         private readonly IWorkoutExerciseRepository _workoutExerciseRepository;
-        private readonly IWorkoutRepository _workoutRepository;
-        private readonly IExerciseRepository _exerciseRepository;
         private readonly IMapper _mapper;
 
         public UpdateWorkoutExerciseCommandHandler(
             IWorkoutExerciseRepository workoutExerciseRepository,
-            IWorkoutRepository workoutRepository,
-            IExerciseRepository exerciseRepository,
             IMapper mapper)
         {
             _workoutExerciseRepository = workoutExerciseRepository;
-            _workoutRepository = workoutRepository;
-            _exerciseRepository = exerciseRepository;
             _mapper = mapper;
         }
 
@@ -44,14 +38,14 @@ namespace Application.ModelHandling.WorkoutExercise.Commands.UpdateWorkoutExerci
 
 
             // Validera FK Workout
-            if (!await _workoutRepository.ExistsAsync(request.WorkoutId))
+            if (!await _workoutExerciseRepository.WorkoutExistsAsync(request.WorkoutId))
             {
                 return OperationResult<WorkoutExerciseDto>.Failure(
                     $"Workout with ID {request.WorkoutId} does not exist.");
             }
 
             // Validera FK Exercise
-            if (!await _exerciseRepository.ExistsAsync(request.ExerciseId))
+            if (!await _workoutExerciseRepository.ExerciseExistsAsync(request.ExerciseId))
             {
                 return OperationResult<WorkoutExerciseDto>.Failure(
                     $"Exercise with ID {request.ExerciseId} does not exist.");

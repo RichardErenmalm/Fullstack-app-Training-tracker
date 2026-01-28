@@ -41,6 +41,14 @@ namespace API
 
 
             var app = builder.Build();
+
+            app.UseMiddleware<API.Middleware.GlobalExceptionMiddleware>();
+
+        
+
+            
+
+
             app.UseCors("AllowFrontend");
 
 

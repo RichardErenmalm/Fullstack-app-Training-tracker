@@ -49,7 +49,7 @@ namespace Infrastructure.Repositories
 
         public async Task<bool> ExistsAsync(int id)
         {
-            return await _context.Users.AnyAsync(u => u.Id == id);
+            return await _context.Workouts.AnyAsync(w => w.Id == id);
         }
     }
 

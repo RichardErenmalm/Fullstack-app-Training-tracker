@@ -1,6 +1,8 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { getWorkoutById } from '../api/workoutApi';
+import { getWorkoutExercisesByWorkoutId } from '../api/workoutExerciseApi';
+import { getExerciseById } from '../api/exerciseApi';
 import { Workout } from '../types/Workout';
 import { WorkoutExercise } from '../types/WorkoutExercise';
 import { Exercise } from '../types/Exercise';
@@ -18,35 +20,6 @@ const WorkoutDetailPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetcha workout exercises + exercise namn
-  const fetchWorkoutExercisesWithNames = async () => {
-    if (!id) return;
-
-    try {
-      // 1️⃣ Hämta alla workoutExercises
-      const res = await fetch(`https://localhost:7026/api/WorkoutExercises/workout/${id}`);
-      if (!res.ok) throw new Error('Kunde inte hämta exercises');
-      const result = await res.json();
-      const exercisesData: WorkoutExercise[] = result.data;
-
-      // 2️⃣ Fetcha Exercise för varje exerciseId
-      const exercisesWithNames: WorkoutExerciseWithName[] = await Promise.all(
-        exercisesData.map(async (we) => {
-          const exRes = await fetch(`https://localhost:7026/api/Exercises/${we.exerciseId}`);
-          if (!exRes.ok) throw new Error(`Kunde inte hämta exercise med id ${we.exerciseId}`);
-          const exResult: Exercise = await exRes.json();
-          return { ...we, exercise: exResult }; // ✅ använda exResult direkt
-        })
-      );
-
-      // 3️⃣ Sätt i state så frontend kan visa exercises med namn
-      setWorkoutExercises(exercisesWithNames);
-    } catch (err: any) {
-      console.error(err);
-      setError(err.message);
-    }
-  };
-
   useEffect(() => {
     const fetchWorkoutAndExercises = async () => {
       try {
@@ -55,12 +28,19 @@ const WorkoutDetailPage: React.FC = () => {
           return;
         }
 
-        // Hämta workout
         const workoutData = await getWorkoutById(Number(id));
         setWorkout(workoutData);
 
-        // Hämta exercises
-        await fetchWorkoutExercisesWithNames();
+        const exercisesData = await getWorkoutExercisesByWorkoutId(Number(id));
+
+        const exercisesWithNames: WorkoutExerciseWithName[] = await Promise.all(
+          exercisesData.map(async (we) => {
+            const exercise = await getExerciseById(we.exerciseId);
+            return { ...we, exercise };
+          })
+        );
+
+        setWorkoutExercises(exercisesWithNames);
       } catch (err: any) {
         console.error(err);
         setError(err.message || `Kunde inte hämta workout med id ${id}`);
@@ -81,7 +61,6 @@ const WorkoutDetailPage: React.FC = () => {
       <h2>{workout.name}</h2>
       <p>User ID: {workout.userId}</p>
 
-      {/* 🔹 Enkel knapp som navigerar till Add Exercise-sidan */}
       <button onClick={() => navigate(`/workouts/${workout.id}/add-exercise`)}>
         Lägg till exercise
       </button>
@@ -102,11 +81,9 @@ const WorkoutDetailPage: React.FC = () => {
         </ul>
       )}
 
-
       <button onClick={() => navigate(`/workouts/${workout.id}/start`)}>
         Start workout
       </button>
-
     </div>
   );
 };

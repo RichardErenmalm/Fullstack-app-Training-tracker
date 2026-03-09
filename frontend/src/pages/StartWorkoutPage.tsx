@@ -1,8 +1,7 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import axios from 'axios';
-import { WorkoutExercise } from '../types/WorkoutExercise';
-import { Exercise } from '../types/Exercise';
+import { getWorkoutExercisesByWorkoutId, saveExerciseHistory } from '../api/workoutExerciseApi';
+import { getExerciseById } from '../api/exerciseApi';
 
 type ExerciseSetInput = {
   setNumber: number;
@@ -29,28 +28,18 @@ const StartWorkoutPage: React.FC = () => {
       try {
         if (!id) return;
 
-        const weRes = await fetch(
-          `https://localhost:7026/api/WorkoutExercises/workout/${id}`
-        );
-        if (!weRes.ok) throw new Error('Kunde inte hämta workout exercises');
-
-        const weResult = await weRes.json();
-        const workoutExercises: WorkoutExercise[] = weResult.data;
+        const workoutExercises = await getWorkoutExercisesByWorkoutId(Number(id));
 
         const exercises: ExerciseWithSets[] = await Promise.all(
           workoutExercises.map(async (we) => {
-            const exRes = await fetch(
-              `https://localhost:7026/api/Exercises/${we.exerciseId}`
-            );
-            if (!exRes.ok)
-              throw new Error(`Kunde inte hämta exercise ${we.exerciseId}`);
-            const exercise: Exercise = await exRes.json();
+            const exercise = await getExerciseById(we.exerciseId);
 
-            const sets: ExerciseSetInput[] = [];
             const totalSets = we.sets || 3;
-            for (let i = 1; i <= totalSets; i++) {
-              sets.push({ setNumber: i, reps: 0, weight: 0 });
-            }
+            const sets: ExerciseSetInput[] = Array.from({ length: totalSets }, (_, i) => ({
+              setNumber: i + 1,
+              reps: 0,
+              weight: 0,
+            }));
 
             return {
               exerciseId: we.exerciseId,
@@ -96,12 +85,12 @@ const StartWorkoutPage: React.FC = () => {
     try {
       for (const ex of exercisesWithSets) {
         for (const s of ex.sets) {
-          await axios.post('https://localhost:7026/api/ExerciseHistory', {
+          await saveExerciseHistory({
             exerciseId: ex.exerciseId,
             reps: s.reps,
             weightKg: s.weight,
             setNumber: s.setNumber,
-            userId: 1, // TODO: byt till inloggad user
+            userId: 1, // TODO: replace with authenticated user
           });
         }
       }
@@ -123,14 +112,12 @@ const StartWorkoutPage: React.FC = () => {
         <div key={ex.exerciseId} style={{ marginBottom: '1rem' }}>
           <h3>{ex.exerciseName}</h3>
 
-          {/* Rubriker */}
           <div style={{ display: 'flex', fontWeight: 'bold', marginBottom: '0.5rem' }}>
             <div style={{ width: '60px' }}>Set</div>
             <div style={{ width: '80px' }}>Reps</div>
             <div style={{ width: '100px' }}>Weight (kg)</div>
           </div>
 
-          {/* Rader per set */}
           {ex.sets.map((s) => (
             <div
               key={s.setNumber}

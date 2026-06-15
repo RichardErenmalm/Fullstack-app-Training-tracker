@@ -31,7 +31,7 @@ namespace API
                     policy =>
                     {
                         policy
-                            .WithOrigins("http://localhost:3000", "http://localhost:3001")
+                            .WithOrigins("http://localhost:3000", "http://localhost:3001", "https://localhost:3000")
                             .AllowAnyHeader()
                             .AllowAnyMethod();
                     });
@@ -44,15 +44,6 @@ namespace API
 
             app.UseMiddleware<API.Middleware.GlobalExceptionMiddleware>();
 
-        
-
-            
-
-
-            app.UseCors("AllowFrontend");
-
-
-
             // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())
             {
@@ -61,6 +52,8 @@ namespace API
             }
 
             app.UseHttpsRedirection();
+
+            app.UseCors("AllowFrontend");
 
             app.UseAuthorization();
 

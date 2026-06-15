@@ -12,11 +12,6 @@ export const getExercises = async (): Promise<Exercise[]> => {
 };
 
 export const getExerciseById = async (id: number): Promise<Exercise> => {
-  const response = await api.get<OperationResult<Exercise>>(`/exercises/${id}`);
-
-  if (response.data.isSuccess) {
-    return response.data.data;
-  } else {
-    throw new Error(response.data.errorMessage || `Failed to fetch exercise with id ${id}`);
-  }
+  const response = await api.get<Exercise>(`/exercises/${id}`);
+  return response.data;
 };

@@ -4,6 +4,7 @@ using Infrastructure.Database;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260312115342_AddWorkoutHistory")]
+    partial class AddWorkoutHistory
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -66,10 +69,10 @@ namespace Infrastructure.Migrations
                     b.Property<int>("WeightKg")
                         .HasColumnType("int");
 
-                    b.Property<int?>("WorkoutExerciseId")
+                    b.Property<int>("WorkoutExerciseId")
                         .HasColumnType("int");
 
-                    b.Property<int?>("WorkoutHistoryId")
+                    b.Property<int>("WorkoutHistoryId")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
@@ -169,7 +172,7 @@ namespace Infrastructure.Migrations
                     b.Property<int>("UserId")
                         .HasColumnType("int");
 
-                    b.Property<int?>("WorkoutId")
+                    b.Property<int>("WorkoutId")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
@@ -198,12 +201,14 @@ namespace Infrastructure.Migrations
                     b.HasOne("Domain.Models.WorkoutExercise", "WorkoutExercise")
                         .WithMany("ExerciseHistories")
                         .HasForeignKey("WorkoutExerciseId")
-                        .OnDelete(DeleteBehavior.NoAction);
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
 
                     b.HasOne("Domain.Models.WorkoutHistory", "WorkoutHistory")
                         .WithMany("ExerciseHistories")
                         .HasForeignKey("WorkoutHistoryId")
-                        .OnDelete(DeleteBehavior.NoAction);
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
 
                     b.Navigation("Exercise");
 
@@ -236,7 +241,7 @@ namespace Infrastructure.Migrations
                     b.HasOne("Domain.Models.Workout", "Workout")
                         .WithMany("WorkoutExercises")
                         .HasForeignKey("WorkoutId")
-                        .OnDelete(DeleteBehavior.NoAction)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Exercise");
@@ -255,7 +260,8 @@ namespace Infrastructure.Migrations
                     b.HasOne("Domain.Models.Workout", "Workout")
                         .WithMany("WorkoutHistories")
                         .HasForeignKey("WorkoutId")
-                        .OnDelete(DeleteBehavior.NoAction);
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("User");
 

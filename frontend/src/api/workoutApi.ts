@@ -20,3 +20,7 @@ export const getWorkoutById = async (id: number): Promise<Workout> => {
   const response = await api.get<Workout>(`/workouts/${id}`);
   return response.data;
 };
+
+export const deleteWorkout = async (id: number): Promise<void> => {
+  await api.delete(`/workouts/${id}`, { data: { id } });
+};

@@ -21,7 +21,7 @@ const CreateWorkoutForm: React.FC<Props> = ({ onWorkoutCreated }) => {
     try {
       const newWorkout = await createWorkout({
         name,
-        userId: 1, // TODO: replace with authenticated user
+        userId: 1,
       });
 
       onWorkoutCreated(newWorkout);
@@ -36,16 +36,19 @@ const CreateWorkoutForm: React.FC<Props> = ({ onWorkoutCreated }) => {
 
   return (
     <form onSubmit={handleSubmit}>
-      <input
-        type="text"
-        placeholder="Workout name"
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-      />
-      <button type="submit" disabled={loading}>
-        {loading ? 'Skapar...' : 'Skapa Workout'}
-      </button>
-      {error && <p style={{ color: 'red' }}>{error}</p>}
+      <div className="form-row">
+        <input
+          className="input"
+          type="text"
+          placeholder="Namn på workout..."
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+        />
+        <button className="btn btn-primary" type="submit" disabled={loading}>
+          {loading ? 'Skapar...' : 'Skapa Workout'}
+        </button>
+      </div>
+      {error && <p className="error-msg">{error}</p>}
     </form>
   );
 };

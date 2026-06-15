@@ -22,6 +22,7 @@ namespace Infrastructure
             services.AddScoped<IUserRepository, UserRepository>();
             services.AddScoped<IWorkoutRepository, WorkoutRepository>();
             services.AddScoped<IWorkoutExerciseRepository, WorkoutExerciseRepository>();
+            services.AddScoped<IWorkoutHistoryRepository, WorkoutHistoryRepository>();
 
 
             services.AddDbContext<AppDbContext>(options =>

@@ -15,5 +15,8 @@ namespace Application.Interfaces
         public Task UpdateExerciseHistoryAsync(ExerciseHistory exerciseHistory);
 
         public Task DeleteExerciseHistoryAsync(ExerciseHistory exerciseHistory);
+        public Task<bool> ExistsAsync(int workoutExerciseId, int setNumber, int workoutHistoryId);
+        public Task DetachFromWorkoutExercisesAsync(IEnumerable<int> workoutExerciseIds);
+        public Task DetachFromWorkoutHistoriesAsync(IEnumerable<int> workoutHistoryIds);
     }
 }

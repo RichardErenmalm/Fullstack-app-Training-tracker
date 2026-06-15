@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { getExercises } from '../api/exerciseApi';
 import { addExerciseToWorkout } from '../api/workoutExerciseApi';
 import { Exercise } from '../types/Exercise';
@@ -32,7 +32,6 @@ const AddExerciseToWorkoutPage: React.FC = () => {
   const handleAddExercise = async (exerciseId: number) => {
     try {
       await addExerciseToWorkout(workoutId, exerciseId);
-      alert('Exercise tillagd!');
       navigate(`/workouts/${workoutId}`);
     } catch (err: any) {
       console.error(err);
@@ -40,24 +39,27 @@ const AddExerciseToWorkoutPage: React.FC = () => {
     }
   };
 
-  if (loading) return <p>Laddar exercises...</p>;
-  if (error) return <p>{error}</p>;
+  if (loading) return <div className="page"><p className="status-msg">Laddar övningar...</p></div>;
+  if (error) return <div className="page"><p className="error-msg">{error}</p></div>;
 
   return (
-    <div>
-      <h2>Lägg till Exercise till Workout #{workoutId}</h2>
+    <div className="page">
+      <Link to={`/workouts/${workoutId}`} className="back-link">&larr; Tillbaka</Link>
+      <h2>Lägg till övning</h2>
+
       {exercises.length === 0 ? (
-        <p>Inga exercises tillgängliga</p>
+        <p className="status-msg">Inga övningar tillgängliga</p>
       ) : (
-        <ul>
+        <div className="exercise-grid">
           {exercises.map((exercise) => (
-            <li key={exercise.id}>
-              <button onClick={() => handleAddExercise(exercise.id)}>
-                {exercise.name}
+            <div className="exercise-item" key={exercise.id}>
+              <span>{exercise.name}</span>
+              <button className="btn btn-primary" onClick={() => handleAddExercise(exercise.id)}>
+                Lägg till
               </button>
-            </li>
+            </div>
           ))}
-        </ul>
+        </div>
       )}
     </div>
   );

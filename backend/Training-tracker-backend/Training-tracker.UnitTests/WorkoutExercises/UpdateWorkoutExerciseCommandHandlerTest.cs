@@ -1,4 +1,4 @@
-﻿using Application.ModelHandling.WorkoutExercise.Commands.UpdateWorkoutExercise;
+using Application.ModelHandling.WorkoutExercise.Commands.UpdateWorkoutExercise;
 using Application.Dtos;
 using Application.Interfaces;
 using AutoMapper;
@@ -13,20 +13,13 @@ namespace Application.Tests.ModelHandling.WorkoutExercise.Commands
 {
     public class UpdateWorkoutExerciseCommandHandlerTests
     {
-
+        private readonly Mock<IWorkoutExerciseRepository> _workoutExerciseRepoMock;
         private readonly Mock<IMapper> _mapperMock;
         private readonly UpdateWorkoutExerciseCommandHandler _handler;
-        private readonly Mock<IWorkoutExerciseRepository> _workoutExerciseRepoMock;
-        private readonly Mock<IWorkoutRepository> _workoutRepoMock;
-        private readonly Mock<IExerciseRepository> _exerciseRepoMock;
-
-
 
         public UpdateWorkoutExerciseCommandHandlerTests()
         {
             _workoutExerciseRepoMock = new Mock<IWorkoutExerciseRepository>();
-            _workoutRepoMock = new Mock<IWorkoutRepository>();
-            _exerciseRepoMock = new Mock<IExerciseRepository>();
             _mapperMock = new Mock<IMapper>();
 
             _handler = new UpdateWorkoutExerciseCommandHandler(
@@ -34,7 +27,6 @@ namespace Application.Tests.ModelHandling.WorkoutExercise.Commands
                 _mapperMock.Object
             );
         }
-
 
         [Fact]
         public async Task Handle_ShouldReturnSuccess_WhenWorkoutExerciseIsUpdated()
@@ -84,11 +76,7 @@ namespace Application.Tests.ModelHandling.WorkoutExercise.Commands
                 .Setup(m => m.Map<WorkoutExerciseDto>(It.IsAny<Domain.Models.WorkoutExercise>()))
                 .Returns(dto);
 
-            var handler = new UpdateWorkoutExerciseCommandHandler(
-                _workoutExerciseRepoMock.Object,
-                _mapperMock.Object);
-
-            var result = await handler.Handle(command, CancellationToken.None);
+            var result = await _handler.Handle(command, CancellationToken.None);
 
             result.IsSuccess.Should().BeTrue();
             result.Data.Should().Be(dto);
@@ -98,33 +86,53 @@ namespace Application.Tests.ModelHandling.WorkoutExercise.Commands
                 Times.Once);
         }
 
-
         [Fact]
         public async Task Handle_ShouldReturnFailure_WhenWorkoutExerciseDoesNotExist()
         {
-            // Arrange
             var command = new UpdateWorkoutExerciseCommand
             {
                 Id = 99,
+                Sets = 3,
                 WorkoutId = 1,
                 ExerciseId = 2
             };
 
-            _workoutExerciseRepoMock.Setup(r => r.GetWorkoutExerciseByIdAsync(command.Id))
-            .ReturnsAsync((Domain.Models.WorkoutExercise)null);
+            _workoutExerciseRepoMock
+                .Setup(r => r.GetWorkoutExerciseByIdAsync(command.Id))
+                .ReturnsAsync((Domain.Models.WorkoutExercise)null);
 
-
-            // Act
             var result = await _handler.Handle(command, CancellationToken.None);
 
-            // Assert
             result.IsSuccess.Should().BeFalse();
             result.ErrorMessage.Should().Contain("does not exist");
 
             _workoutExerciseRepoMock.Verify(
                 r => r.UpdateWorkoutExerciseAsync(It.IsAny<Domain.Models.WorkoutExercise>()),
-                Times.Never
-            );
+                Times.Never);
+        }
+
+        [Theory]
+        [InlineData(0)]
+        [InlineData(-1)]
+        [InlineData(-100)]
+        public async Task Handle_ShouldReturnFailure_WhenSetsIsZeroOrNegative(int invalidSets)
+        {
+            var command = new UpdateWorkoutExerciseCommand
+            {
+                Id = 1,
+                Sets = invalidSets,
+                WorkoutId = 1,
+                ExerciseId = 2
+            };
+
+            var result = await _handler.Handle(command, CancellationToken.None);
+
+            result.IsSuccess.Should().BeFalse();
+            result.ErrorMessage.Should().Contain("Sets must be greater than 0");
+
+            _workoutExerciseRepoMock.Verify(
+                r => r.GetWorkoutExerciseByIdAsync(It.IsAny<int>()),
+                Times.Never);
         }
     }
 }

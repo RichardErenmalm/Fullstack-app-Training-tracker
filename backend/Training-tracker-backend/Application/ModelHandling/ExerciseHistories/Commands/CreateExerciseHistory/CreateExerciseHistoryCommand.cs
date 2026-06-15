@@ -22,6 +22,10 @@ namespace Application.ModelHandling.ExerciseHistories.Commands.CreateExerciseHis
 
         public int UserId { get; set; }
 
+        public int WorkoutExerciseId { get; set; }
+
+        public int WorkoutHistoryId { get; set; }
+
         public DateTime DatTime = DateTime.Now;
     }
 }

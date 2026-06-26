@@ -16,6 +16,6 @@ namespace Domain.Models
 
 
         public ICollection<WorkoutExercise> WorkoutExercises { get; set; } = new List<WorkoutExercise>();
-
+        public ICollection<WorkoutHistory> WorkoutHistories { get; set; } = new List<WorkoutHistory>();
     }
 }

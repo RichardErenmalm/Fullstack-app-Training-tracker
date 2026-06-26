@@ -11,39 +11,44 @@ const CreateWorkoutForm: React.FC<Props> = ({ onWorkoutCreated }) => {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const userId = 1; // temporärt, vi kan fixa inloggning senare
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name) return;
 
-const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  if (!name) return;
+    setLoading(true);
+    setError(null);
 
-  try {
-    const newWorkout = await createWorkout({
-      name,
-      userId: 1 // 👈 TEMPORÄRT, tills auth finns
-    });
+    try {
+      const newWorkout = await createWorkout({
+        name,
+        userId: 1,
+      });
 
-    onWorkoutCreated(newWorkout);
-    setName('');
-  } catch (err) {
-    console.error('Error creating workout', err);
-  }
-};
-
-
+      onWorkoutCreated(newWorkout);
+      setName('');
+    } catch (err: any) {
+      console.error('Error creating workout', err);
+      setError(err.message || 'Kunde inte skapa workout');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <form onSubmit={handleSubmit}>
-      <input
-        type="text"
-        placeholder="Workout name"
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-      />
-      <button type="submit" disabled={loading}>
-        {loading ? 'Skapar...' : 'Skapa Workout'}
-      </button>
-      {error && <p style={{ color: 'red' }}>{error}</p>}
+      <div className="form-row">
+        <input
+          className="input"
+          type="text"
+          placeholder="Namn på workout..."
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+        />
+        <button className="btn btn-primary" type="submit" disabled={loading}>
+          {loading ? 'Skapar...' : 'Skapa Workout'}
+        </button>
+      </div>
+      {error && <p className="error-msg">{error}</p>}
     </form>
   );
 };

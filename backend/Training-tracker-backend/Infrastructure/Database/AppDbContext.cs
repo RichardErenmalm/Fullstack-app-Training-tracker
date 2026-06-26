@@ -19,6 +19,7 @@ namespace Infrastructure.Database
         public DbSet<Exercise> Exercises { get; set; }
         public DbSet<WorkoutExercise> WorkoutExercises { get; set; }
         public DbSet<ExerciseHistory> ExerciseHistories { get; set; }
+        public DbSet<WorkoutHistory> WorkoutHistories { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -34,7 +35,7 @@ namespace Infrastructure.Database
                 .HasOne(we => we.Workout)
                 .WithMany(w => w.WorkoutExercises)
                 .HasForeignKey(we => we.WorkoutId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.NoAction);
 
             modelBuilder.Entity<WorkoutExercise>()
                 .HasOne(we => we.Exercise)
@@ -70,8 +71,29 @@ namespace Infrastructure.Database
               .WithMany(u => u.ExerciseHistories)
               .HasForeignKey(eh => eh.UserId);
 
+            modelBuilder.Entity<ExerciseHistory>()
+              .HasOne(eh => eh.WorkoutExercise)
+              .WithMany(we => we.ExerciseHistories)
+              .HasForeignKey(eh => eh.WorkoutExerciseId)
+              .OnDelete(DeleteBehavior.NoAction);
 
+            modelBuilder.Entity<ExerciseHistory>()
+              .HasOne(eh => eh.WorkoutHistory)
+              .WithMany(wh => wh.ExerciseHistories)
+              .HasForeignKey(eh => eh.WorkoutHistoryId)
+              .OnDelete(DeleteBehavior.NoAction);
 
+            modelBuilder.Entity<WorkoutHistory>()
+              .HasOne(wh => wh.Workout)
+              .WithMany(w => w.WorkoutHistories)
+              .HasForeignKey(wh => wh.WorkoutId)
+              .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<WorkoutHistory>()
+              .HasOne(wh => wh.User)
+              .WithMany(u => u.WorkoutHistories)
+              .HasForeignKey(wh => wh.UserId)
+              .OnDelete(DeleteBehavior.NoAction);
 
             base.OnModelCreating(modelBuilder);
         }

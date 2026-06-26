@@ -21,9 +21,15 @@ namespace Domain.Models
 
 
         public int ExerciseId { get; set; }
-        public Exercise? Exercise { get; set; } 
+        public Exercise? Exercise { get; set; }
 
         public int UserId { get; set; }
-        public User? User { get; set; } 
+        public User? User { get; set; }
+
+        public int? WorkoutExerciseId { get; set; }
+        public WorkoutExercise? WorkoutExercise { get; set; }
+
+        public int? WorkoutHistoryId { get; set; }
+        public WorkoutHistory? WorkoutHistory { get; set; }
     }
 }

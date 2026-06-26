@@ -22,5 +22,7 @@ namespace Application.Dtos
 
         public int UserId { get; set; }
         public int ExerciseId { get; set; }
+        public int? WorkoutExerciseId { get; set; }
+        public int? WorkoutHistoryId { get; set; }
     }
 }

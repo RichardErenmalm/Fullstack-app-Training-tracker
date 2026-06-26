@@ -1,38 +1,55 @@
-// src/api/workoutExerciseApi.ts
-import axios from "axios";
+import api, { OperationResult } from "./api";
+import { WorkoutExercise } from "../types/WorkoutExercise";
 
-// Base URL från .env
-const API_BASE_URL = process.env.REACT_APP_API_URL!;
-console.log("API_BASE_URL:", API_BASE_URL);
+export const getWorkoutExercisesByWorkoutId = async (workoutId: number): Promise<WorkoutExercise[]> => {
+  const response = await api.get<OperationResult<WorkoutExercise[]>>(`/workoutExercises/workout/${workoutId}`);
 
-// Axios-instans
-const api = axios.create({
-  baseURL: API_BASE_URL,
-  headers: {
-    "Content-Type": "application/json",
-  },
-});
-
-export interface OperationResult<T> {
-  isSuccess: boolean;
-  data: T;
-  errorMessage?: string;
-}
-
-// Lägg till exercise till en workout
-export const addExerciseToWorkout = async (workoutId: number, exerciseId: number): Promise<void> => {
-  try {
-    const response = await api.post("/workoutExercises", {
-      workoutId,
-      exerciseId,
-    });
-
-    if (!response.data.isSuccess) {
-      console.error("Failed to add exercise to workout:", response.data.errorMessage);
-      throw new Error(response.data.errorMessage);
-    }
-  } catch (err) {
-    console.error("Error in addExerciseToWorkout:", err);
-    throw err;
+  if (response.data.isSuccess) {
+    return response.data.data;
+  } else {
+    throw new Error(response.data.errorMessage || "Failed to fetch workout exercises");
   }
+};
+
+export const addExerciseToWorkout = async (workoutId: number, exerciseId: number): Promise<void> => {
+  const response = await api.post<OperationResult<unknown>>("/workoutExercises", {
+    workoutId,
+    exerciseId,
+  });
+
+  if (!response.data.isSuccess) {
+    throw new Error(response.data.errorMessage || "Failed to add exercise to workout");
+  }
+};
+
+export const saveExerciseHistory = async (entry: {
+  exerciseId: number;
+  reps: number;
+  weightKg: number;
+  setNumber: number;
+  userId: number;
+  workoutExerciseId: number;
+  workoutHistoryId: number;
+}): Promise<OperationResult<{ id: number }>> => {
+  const response = await api.post<OperationResult<{ id: number }>>("/exerciseHistory", entry);
+  return response.data;
+};
+
+export const deleteExerciseHistory = async (id: number): Promise<void> => {
+  await api.delete(`/exerciseHistory/${id}`, { data: { id } });
+};
+
+export const createWorkoutHistory = async (workoutId: number, userId: number): Promise<{ id: number }> => {
+  const response = await api.post<OperationResult<{ id: number }>>("/workoutHistory", {
+    workoutId,
+    userId,
+  });
+  if (response.data.isSuccess) {
+    return response.data.data;
+  }
+  throw new Error(response.data.errorMessage || "Failed to create workout history");
+};
+
+export const deleteWorkoutHistory = async (id: number): Promise<void> => {
+  await api.delete(`/workoutHistory/${id}`, { data: { id } });
 };

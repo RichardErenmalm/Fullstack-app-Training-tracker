@@ -1,6 +1,8 @@
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { getWorkoutById } from '../api/workoutApi';
+import { getWorkoutById, deleteWorkout } from '../api/workoutApi';
+import { getWorkoutExercisesByWorkoutId } from '../api/workoutExerciseApi';
+import { getExerciseById } from '../api/exerciseApi';
 import { Workout } from '../types/Workout';
 import { WorkoutExercise } from '../types/WorkoutExercise';
 import { Exercise } from '../types/Exercise';
@@ -17,35 +19,8 @@ const WorkoutDetailPage: React.FC = () => {
   const [workoutExercises, setWorkoutExercises] = useState<WorkoutExerciseWithName[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  // Fetcha workout exercises + exercise namn
-  const fetchWorkoutExercisesWithNames = async () => {
-    if (!id) return;
-
-    try {
-      // 1️⃣ Hämta alla workoutExercises
-      const res = await fetch(`https://localhost:7026/api/WorkoutExercises/workout/${id}`);
-      if (!res.ok) throw new Error('Kunde inte hämta exercises');
-      const result = await res.json();
-      const exercisesData: WorkoutExercise[] = result.data;
-
-      // 2️⃣ Fetcha Exercise för varje exerciseId
-      const exercisesWithNames: WorkoutExerciseWithName[] = await Promise.all(
-        exercisesData.map(async (we) => {
-          const exRes = await fetch(`https://localhost:7026/api/Exercises/${we.exerciseId}`);
-          if (!exRes.ok) throw new Error(`Kunde inte hämta exercise med id ${we.exerciseId}`);
-          const exResult: Exercise = await exRes.json();
-          return { ...we, exercise: exResult }; // ✅ använda exResult direkt
-        })
-      );
-
-      // 3️⃣ Sätt i state så frontend kan visa exercises med namn
-      setWorkoutExercises(exercisesWithNames);
-    } catch (err: any) {
-      console.error(err);
-      setError(err.message);
-    }
-  };
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     const fetchWorkoutAndExercises = async () => {
@@ -55,12 +30,19 @@ const WorkoutDetailPage: React.FC = () => {
           return;
         }
 
-        // Hämta workout
         const workoutData = await getWorkoutById(Number(id));
         setWorkout(workoutData);
 
-        // Hämta exercises
-        await fetchWorkoutExercisesWithNames();
+        const exercisesData = await getWorkoutExercisesByWorkoutId(Number(id));
+
+        const exercisesWithNames: WorkoutExerciseWithName[] = await Promise.all(
+          exercisesData.map(async (we) => {
+            const exercise = await getExerciseById(we.exerciseId);
+            return { ...we, exercise };
+          })
+        );
+
+        setWorkoutExercises(exercisesWithNames);
       } catch (err: any) {
         console.error(err);
         setError(err.message || `Kunde inte hämta workout med id ${id}`);
@@ -72,41 +54,73 @@ const WorkoutDetailPage: React.FC = () => {
     fetchWorkoutAndExercises();
   }, [id]);
 
-  if (loading) return <p>Laddar workout...</p>;
-  if (error) return <p>{error}</p>;
-  if (!workout) return <p>Workout hittades inte</p>;
+  if (loading) return <div className="page"><p className="status-msg">Laddar workout...</p></div>;
+  if (error) return <div className="page"><p className="error-msg">{error}</p></div>;
+  if (!workout) return <div className="page"><p className="status-msg">Workout hittades inte</p></div>;
 
   return (
-    <div>
+    <div className="page">
+      <Link to="/" className="back-link">&larr; Tillbaka</Link>
       <h2>{workout.name}</h2>
-      <p>User ID: {workout.userId}</p>
 
-      {/* 🔹 Enkel knapp som navigerar till Add Exercise-sidan */}
-      <button onClick={() => navigate(`/workouts/${workout.id}/add-exercise`)}>
-        Lägg till exercise
-      </button>
+      <div className="btn-group">
+        <button className="btn btn-primary" onClick={() => navigate(`/workouts/${workout.id}/add-exercise`)}>
+          Lägg till övning
+        </button>
+        <button className="btn btn-success" onClick={() => navigate(`/workouts/${workout.id}/start`)}>
+          Starta workout
+        </button>
+      </div>
 
-      <hr />
+      <hr className="divider" />
 
-      <h3>Exercises</h3>
+      <h3>Övningar</h3>
       {workoutExercises.length === 0 ? (
-        <p>Inga exercises tillagda än.</p>
+        <p className="status-msg">Inga övningar tillagda ännu.</p>
       ) : (
-        <ul>
-          {workoutExercises.map((we) => (
-            <li key={we.id}>
-              <strong>{we.exercise?.name}</strong> <br />
-              Sets: {we.sets} | Reps: {we.reps ?? ''} | Weight: {we.weight ?? 0} kg
-            </li>
-          ))}
-        </ul>
+        workoutExercises.map((we) => (
+          <div className="card" key={we.id}>
+            <div className="card-title">{we.exercise?.name}</div>
+            <div className="card-subtitle">
+              {we.sets} sets &middot; {we.reps ?? '–'} reps &middot; {we.weight ?? 0} kg
+            </div>
+          </div>
+        ))
       )}
 
+      <hr className="divider" />
 
-      <button onClick={() => navigate(`/workouts/${workout.id}/start`)}>
-        Start workout
-      </button>
-
+      {!confirmDelete ? (
+        <button className="btn btn-danger-outline btn-sm" onClick={() => setConfirmDelete(true)}>
+          Delete workout
+        </button>
+      ) : (
+        <div className="confirm-delete">
+          <p className="confirm-delete-text">This action cannot be undone. Are you sure?</p>
+          <div className="btn-group">
+            <button
+              className="btn btn-danger btn-sm"
+              disabled={deleting}
+              onClick={async () => {
+                setDeleting(true);
+                try {
+                  await deleteWorkout(workout.id);
+                  navigate('/');
+                } catch (err) {
+                  console.error(err);
+                  alert('Could not delete workout');
+                  setDeleting(false);
+                }
+              }}
+            >
+              {deleting ? 'Deleting...' : 'Yes, delete'}
+            </button>
+            <button className="btn btn-secondary btn-sm" onClick={() => setConfirmDelete(false)}>
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

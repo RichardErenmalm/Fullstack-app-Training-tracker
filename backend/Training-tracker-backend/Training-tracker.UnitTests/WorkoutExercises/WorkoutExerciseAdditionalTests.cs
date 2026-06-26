@@ -78,7 +78,7 @@ namespace Application.Tests.ModelHandling.WorkoutExercise.Commands
         [Fact]
         public async Task UpdateWorkoutExercise_ShouldReturnFailure_WhenWorkoutExerciseDoesNotExist()
         {
-            var command = new UpdateWorkoutExerciseCommand { Id = 99 };
+            var command = new UpdateWorkoutExerciseCommand { Id = 99, Sets = 1 };
 
             _workoutExerciseRepoMock
                 .Setup(r => r.GetWorkoutExerciseByIdAsync(command.Id))

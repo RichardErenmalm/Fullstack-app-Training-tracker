@@ -12,7 +12,7 @@ const WorkoutListPage: React.FC = () => {
   useEffect(() => {
     const fetchWorkouts = async () => {
       try {
-        const data = await getWorkouts(); // Workout[]
+        const data = await getWorkouts();
         setWorkouts(data);
       } catch (err: any) {
         console.error(err);
@@ -29,23 +29,25 @@ const WorkoutListPage: React.FC = () => {
     setWorkouts([...workouts, newWorkout]);
   };
 
-  if (loading) return <p>Laddar workouts...</p>;
-  if (error) return <p>{error}</p>;
-  if (workouts.length === 0) return <p>Inga workouts hittades</p>;
+  if (loading) return <div className="page"><p className="status-msg">Laddar workouts...</p></div>;
+  if (error) return <div className="page"><p className="error-msg">{error}</p></div>;
 
   return (
-    <div>
-      <h2>Workouts</h2>
+    <div className="page">
+      <h2>Mina Workouts</h2>
       <CreateWorkoutForm onWorkoutCreated={handleWorkoutCreated} />
-      <ul>
-        {workouts.map((w) => (
-          <li key={w.id}>
-            <Link to={`/workouts/${w.id}`}>
-              <strong>{w.name}</strong>
-            </Link>
-          </li>
-        ))}
-      </ul>
+
+      {workouts.length === 0 ? (
+        <p className="status-msg">Inga workouts ännu. Skapa din första!</p>
+      ) : (
+        workouts.map((w) => (
+          <Link to={`/workouts/${w.id}`} key={w.id}>
+            <div className="card">
+              <div className="card-title">{w.name}</div>
+            </div>
+          </Link>
+        ))
+      )}
     </div>
   );
 };

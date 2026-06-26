@@ -1,13 +1,8 @@
-﻿using Application.Dtos;
+using Application.Dtos;
 using Application.Interfaces;
 using AutoMapper;
 using Domain.Common;
 using MediatR;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Application.ModelHandling.WorkoutExercise.Commands.UpdateWorkoutExercise
 {
@@ -29,51 +24,38 @@ namespace Application.ModelHandling.WorkoutExercise.Commands.UpdateWorkoutExerci
             UpdateWorkoutExerciseCommand request,
             CancellationToken cancellationToken)
         {
-            // Hämta befintlig rad
+            if (request.Sets <= 0)
+                return OperationResult<WorkoutExerciseDto>.Failure("Sets must be greater than 0.");
+
             var workoutExercise = await _workoutExerciseRepository.GetWorkoutExerciseByIdAsync(request.Id);
 
             if (workoutExercise == null)
                 return OperationResult<WorkoutExerciseDto>.Failure(
                     $"WorkoutExercise with Id {request.Id} does not exist");
 
-
-            // Validera FK Workout
             if (!await _workoutExerciseRepository.WorkoutExistsAsync(request.WorkoutId))
-            {
                 return OperationResult<WorkoutExerciseDto>.Failure(
                     $"Workout with ID {request.WorkoutId} does not exist.");
-            }
 
-            // Validera FK Exercise
             if (!await _workoutExerciseRepository.ExerciseExistsAsync(request.ExerciseId))
-            {
                 return OperationResult<WorkoutExerciseDto>.Failure(
                     $"Exercise with ID {request.ExerciseId} does not exist.");
-            }
-
 
             var duplicateExists = await _workoutExerciseRepository
                 .ExerciseAlreadyAddedToWorkoutUpdateAsync(request.WorkoutId, request.ExerciseId, request.Id);
 
             if (duplicateExists)
-            {
                 return OperationResult<WorkoutExerciseDto>.Failure(
-                    $"This exercise is already added to this workout.");
-            }
+                    "This exercise is already added to this workout.");
 
-            // Uppdatera fält
             workoutExercise.WorkoutId = request.WorkoutId;
             workoutExercise.ExerciseId = request.ExerciseId;
             workoutExercise.Sets = request.Sets;
 
-            // Spara
             await _workoutExerciseRepository.UpdateWorkoutExerciseAsync(workoutExercise);
 
-            // Mappa tillbaka → DTO
             var result = _mapper.Map<WorkoutExerciseDto>(workoutExercise);
-
             return OperationResult<WorkoutExerciseDto>.Success(result);
         }
     }
-
 }

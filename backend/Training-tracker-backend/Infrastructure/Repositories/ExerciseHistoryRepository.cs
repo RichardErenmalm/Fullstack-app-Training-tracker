@@ -47,5 +47,32 @@ namespace Infrastructure.Repositories
             await _context.SaveChangesAsync();
         }
 
+        public async Task DetachFromWorkoutExercisesAsync(IEnumerable<int> workoutExerciseIds)
+        {
+            var entries = await _context.ExerciseHistories
+                .Where(eh => eh.WorkoutExerciseId.HasValue && workoutExerciseIds.Contains(eh.WorkoutExerciseId.Value))
+                .ToListAsync();
+            foreach (var e in entries) e.WorkoutExerciseId = null;
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task DetachFromWorkoutHistoriesAsync(IEnumerable<int> workoutHistoryIds)
+        {
+            var entries = await _context.ExerciseHistories
+                .Where(eh => eh.WorkoutHistoryId.HasValue && workoutHistoryIds.Contains(eh.WorkoutHistoryId.Value))
+                .ToListAsync();
+            foreach (var e in entries) e.WorkoutHistoryId = null;
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task<bool> ExistsAsync(int workoutExerciseId, int setNumber, int workoutHistoryId)
+        {
+            return await _context.ExerciseHistories
+                .AnyAsync(eh => eh.WorkoutExerciseId.HasValue
+                    && eh.WorkoutExerciseId.Value == workoutExerciseId
+                    && eh.SetNumber == setNumber
+                    && eh.WorkoutHistoryId.HasValue
+                    && eh.WorkoutHistoryId.Value == workoutHistoryId);
+        }
     }
 }

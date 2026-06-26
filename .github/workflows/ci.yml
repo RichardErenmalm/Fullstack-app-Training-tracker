@@ -19,14 +19,14 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v3
         with:
-          dotnet-version: 7.0.x
+          dotnet-version: 8.0.x
 
       - name: Restore dependencies
-        run: dotnet restore ./backend/Training-tracker-backend/API/API.csproj
+        run: dotnet restore ./backend/Training-tracker-backend/Training-tracker-backend.sln
 
       - name: Build
-        run: dotnet build ./backend/Training-tracker-backend/API/API.csproj --no-restore --configuration Release
+        run: dotnet build ./backend/Training-tracker-backend/Training-tracker-backend.sln --no-restore
 
       - name: Run tests
-        run: dotnet test ./backend/Training-tracker-backend/Training-tracker.UnitTests/Training-tracker.UnitTests.csproj
+        run: dotnet test ./backend/Training-tracker-backend/Training-tracker.UnitTests/Training-tracker.UnitTests.csproj --no-build --verbosity normal
 

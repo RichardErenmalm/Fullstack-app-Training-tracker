@@ -1,66 +1,95 @@
-import { useParams, useNavigate } from 'react-router-dom';
-import { useEffect, useState } from 'react';
-import axios from 'axios';
-import { WorkoutExercise } from '../types/WorkoutExercise';
-import { Exercise } from '../types/Exercise';
+import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useEffect, useState, useCallback } from 'react';
+import { getWorkoutExercisesByWorkoutId, saveExerciseHistory, deleteExerciseHistory, createWorkoutHistory, deleteWorkoutHistory } from '../api/workoutExerciseApi';
+import { getExerciseById } from '../api/exerciseApi';
 
 type ExerciseSetInput = {
   setNumber: number;
   reps: number;
   weight: number;
+  saved: boolean;
+  saving: boolean;
+  savedHistoryId: number | null;
 };
 
 type ExerciseWithSets = {
   exerciseId: number;
   exerciseName: string;
+  workoutExerciseId: number;
   sets: ExerciseSetInput[];
 };
+
+type SessionState = {
+  exercises: ExerciseWithSets[];
+  workoutHistoryId: number | null;
+};
+
+const STORAGE_KEY_PREFIX = 'workout-session-';
 
 const StartWorkoutPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const storageKey = `${STORAGE_KEY_PREFIX}${id}`;
 
   const [exercisesWithSets, setExercisesWithSets] = useState<ExerciseWithSets[]>([]);
+  const [workoutHistoryId, setWorkoutHistoryId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const persistState = useCallback((exercises: ExerciseWithSets[], whId: number | null) => {
+    const state: SessionState = { exercises, workoutHistoryId: whId };
+    sessionStorage.setItem(storageKey, JSON.stringify(state));
+  }, [storageKey]);
+
   useEffect(() => {
-    const fetchExercisesForWorkout = async () => {
+    const init = async () => {
       try {
         if (!id) return;
 
-        const weRes = await fetch(
-          `https://localhost:7026/api/WorkoutExercises/workout/${id}`
-        );
-        if (!weRes.ok) throw new Error('Kunde inte hämta workout exercises');
+        // Try restoring from sessionStorage
+        const stored = sessionStorage.getItem(storageKey);
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          // Handle both old format (array) and new format (object with exercises)
+          if (parsed && parsed.exercises && parsed.workoutHistoryId) {
+            setExercisesWithSets(parsed.exercises);
+            setWorkoutHistoryId(parsed.workoutHistoryId);
+            setLoading(false);
+            return;
+          }
+          // Invalid/old format — clear and start fresh
+          sessionStorage.removeItem(storageKey);
+        }
 
-        const weResult = await weRes.json();
-        const workoutExercises: WorkoutExercise[] = weResult.data;
+        // Create a new WorkoutHistory for this session
+        const wh = await createWorkoutHistory(Number(id), 1);
+
+        const workoutExercises = await getWorkoutExercisesByWorkoutId(Number(id));
 
         const exercises: ExerciseWithSets[] = await Promise.all(
           workoutExercises.map(async (we) => {
-            const exRes = await fetch(
-              `https://localhost:7026/api/Exercises/${we.exerciseId}`
-            );
-            if (!exRes.ok)
-              throw new Error(`Kunde inte hämta exercise ${we.exerciseId}`);
-            const exercise: Exercise = await exRes.json();
-
-            const sets: ExerciseSetInput[] = [];
+            const exercise = await getExerciseById(we.exerciseId);
             const totalSets = we.sets || 3;
-            for (let i = 1; i <= totalSets; i++) {
-              sets.push({ setNumber: i, reps: 0, weight: 0 });
-            }
-
+            const sets: ExerciseSetInput[] = Array.from({ length: totalSets }, (_, i) => ({
+              setNumber: i + 1,
+              reps: 0,
+              weight: 0,
+              saved: false,
+              saving: false,
+              savedHistoryId: null,
+            }));
             return {
               exerciseId: we.exerciseId,
               exerciseName: exercise.name,
+              workoutExerciseId: we.id,
               sets,
             };
           })
         );
 
         setExercisesWithSets(exercises);
+        setWorkoutHistoryId(wh.id);
+        persistState(exercises, wh.id);
       } catch (err: any) {
         console.error(err);
         setError(err.message);
@@ -69,17 +98,17 @@ const StartWorkoutPage: React.FC = () => {
       }
     };
 
-    fetchExercisesForWorkout();
-  }, [id]);
+    init();
+  }, [id, storageKey, persistState]);
 
   const updateSet = (
     exerciseId: number,
     setNumber: number,
-    field: keyof ExerciseSetInput,
+    field: 'reps' | 'weight',
     value: number
   ) => {
-    setExercisesWithSets((prev) =>
-      prev.map((ex) =>
+    setExercisesWithSets((prev) => {
+      const updated = prev.map((ex) =>
         ex.exerciseId === exerciseId
           ? {
               ...ex,
@@ -88,79 +117,225 @@ const StartWorkoutPage: React.FC = () => {
               ),
             }
           : ex
+      );
+      persistState(updated, workoutHistoryId);
+      return updated;
+    });
+  };
+
+  const setSaving = (exerciseId: number, setNumber: number, saving: boolean) => {
+    setExercisesWithSets((prev) =>
+      prev.map((e) =>
+        e.exerciseId === exerciseId
+          ? { ...e, sets: e.sets.map((s) => s.setNumber === setNumber ? { ...s, saving } : s) }
+          : e
       )
     );
   };
 
-  const saveWorkout = async () => {
-    try {
-      for (const ex of exercisesWithSets) {
-        for (const s of ex.sets) {
-          await axios.post('https://localhost:7026/api/ExerciseHistory', {
-            exerciseId: ex.exerciseId,
-            reps: s.reps,
-            weightKg: s.weight,
-            setNumber: s.setNumber,
-            userId: 1, // TODO: byt till inloggad user
-          });
-        }
+  const toggleSetDone = async (ex: ExerciseWithSets, set: ExerciseSetInput) => {
+    if (!workoutHistoryId || set.saving) return;
+
+    // Lock immediately
+    setSaving(ex.exerciseId, set.setNumber, true);
+
+    if (set.saved && set.savedHistoryId) {
+      try {
+        await deleteExerciseHistory(set.savedHistoryId);
+        setExercisesWithSets((prev) => {
+          const updated = prev.map((e) =>
+            e.exerciseId === ex.exerciseId
+              ? {
+                  ...e,
+                  sets: e.sets.map((s) =>
+                    s.setNumber === set.setNumber
+                      ? { ...s, saved: false, saving: false, savedHistoryId: null }
+                      : s
+                  ),
+                }
+              : e
+          );
+          persistState(updated, workoutHistoryId);
+          return updated;
+        });
+      } catch (err) {
+        console.error(err);
+        setSaving(ex.exerciseId, set.setNumber, false);
+        alert('Kunde inte ta bort setet');
       }
-      navigate(`/workouts/${id}`);
-    } catch (err) {
-      console.error(err);
-      alert('Kunde inte spara workout');
+    } else {
+      try {
+        const result = await saveExerciseHistory({
+          exerciseId: ex.exerciseId,
+          reps: set.reps,
+          weightKg: set.weight,
+          setNumber: set.setNumber,
+          userId: 1,
+          workoutExerciseId: ex.workoutExerciseId,
+          workoutHistoryId,
+        });
+
+        if (!result.isSuccess) {
+          setSaving(ex.exerciseId, set.setNumber, false);
+          return;
+        }
+
+        const savedId = result.data?.id ?? null;
+
+        setExercisesWithSets((prev) => {
+          const updated = prev.map((e) =>
+            e.exerciseId === ex.exerciseId
+              ? {
+                  ...e,
+                  sets: e.sets.map((s) =>
+                    s.setNumber === set.setNumber
+                      ? { ...s, saved: true, saving: false, savedHistoryId: savedId }
+                      : s
+                  ),
+                }
+              : e
+          );
+          persistState(updated, workoutHistoryId);
+          return updated;
+        });
+      } catch (err) {
+        console.error(err);
+        setSaving(ex.exerciseId, set.setNumber, false);
+        alert('Kunde inte spara setet');
+      }
     }
   };
 
-  if (loading) return <p>Laddar workout...</p>;
-  if (error) return <p>{error}</p>;
+  const finishWorkout = async () => {
+    if (!workoutHistoryId) return;
+
+    const unsaved: Promise<any>[] = [];
+    for (const ex of exercisesWithSets) {
+      for (const s of ex.sets) {
+        if (!s.saved && (s.reps > 0 || s.weight > 0)) {
+          unsaved.push(
+            saveExerciseHistory({
+              exerciseId: ex.exerciseId,
+              reps: s.reps,
+              weightKg: s.weight,
+              setNumber: s.setNumber,
+              userId: 1,
+              workoutExerciseId: ex.workoutExerciseId,
+              workoutHistoryId,
+            })
+          );
+        }
+      }
+    }
+
+    try {
+      await Promise.all(unsaved);
+      sessionStorage.removeItem(storageKey);
+      navigate(`/workouts/${id}`);
+    } catch {
+      alert('Kunde inte spara alla sets');
+    }
+  };
+
+  const cancelWorkout = async () => {
+    if (!workoutHistoryId) {
+      sessionStorage.removeItem(storageKey);
+      navigate(`/workouts/${id}`);
+      return;
+    }
+
+    // Delete all saved exercise histories
+    const savedIds = exercisesWithSets
+      .flatMap((ex) => ex.sets)
+      .filter((s) => s.saved && s.savedHistoryId)
+      .map((s) => s.savedHistoryId!);
+
+    try {
+      await Promise.all(savedIds.map((hid) => deleteExerciseHistory(hid)));
+      // Delete the workout history itself
+      await deleteWorkoutHistory(workoutHistoryId);
+      sessionStorage.removeItem(storageKey);
+      navigate(`/workouts/${id}`);
+    } catch (err) {
+      console.error(err);
+      alert('Kunde inte avbryta workoutet');
+    }
+  };
+
+  if (loading) return <div className="page"><p className="status-msg">Laddar workout...</p></div>;
+  if (error) return <div className="page"><p className="error-msg">{error}</p></div>;
+
+  const allDone = exercisesWithSets.every((ex) => ex.sets.every((s) => s.saved));
 
   return (
-    <div>
-      <h2>Start Workout</h2>
+    <div className="page">
+      <Link to={`/workouts/${id}`} className="back-link" onClick={() => sessionStorage.removeItem(storageKey)}>&larr; Tillbaka</Link>
+      <h2>Workout</h2>
 
       {exercisesWithSets.map((ex) => (
-        <div key={ex.exerciseId} style={{ marginBottom: '1rem' }}>
-          <h3>{ex.exerciseName}</h3>
-
-          {/* Rubriker */}
-          <div style={{ display: 'flex', fontWeight: 'bold', marginBottom: '0.5rem' }}>
-            <div style={{ width: '60px' }}>Set</div>
-            <div style={{ width: '80px' }}>Reps</div>
-            <div style={{ width: '100px' }}>Weight (kg)</div>
+        <div className="exercise-section" key={ex.exerciseId}>
+          <div className="exercise-section-header">
+            <h3>{ex.exerciseName}</h3>
+            <button
+              className="btn btn-secondary btn-sm"
+              onClick={() => navigate(`/exercise-history/${ex.exerciseId}`, { state: { from: `/workouts/${id}/start` } })}
+            >
+              Historik
+            </button>
           </div>
 
-          {/* Rader per set */}
+          <div className="set-header-check">
+            <div></div>
+            <div>Set</div>
+            <div>Reps</div>
+            <div>Vikt (kg)</div>
+          </div>
+
           {ex.sets.map((s) => (
-            <div
-              key={s.setNumber}
-              style={{ display: 'flex', marginBottom: '0.5rem', alignItems: 'center' }}
-            >
-              <div style={{ width: '60px' }}>#{s.setNumber}</div>
+            <div className={`set-row-check ${s.saved ? 'set-done' : ''}`} key={s.setNumber}>
+              <div>
+                <input
+                  type="checkbox"
+                  className="set-checkbox"
+                  checked={s.saved || s.saving}
+                  disabled={s.saving}
+                  onChange={() => toggleSetDone(ex, s)}
+                />
+              </div>
+              <div className="set-number">{s.setNumber}</div>
               <input
+                className="set-input"
                 type="number"
-                placeholder="Reps"
-                value={s.reps}
+                placeholder="0"
+                value={s.reps || ''}
+                disabled={s.saved}
                 onChange={(e) =>
                   updateSet(ex.exerciseId, s.setNumber, 'reps', Number(e.target.value))
                 }
-                style={{ width: '80px', marginRight: '10px' }}
               />
               <input
+                className="set-input"
                 type="number"
-                placeholder="Weight"
-                value={s.weight}
+                placeholder="0"
+                value={s.weight || ''}
+                disabled={s.saved}
                 onChange={(e) =>
                   updateSet(ex.exerciseId, s.setNumber, 'weight', Number(e.target.value))
                 }
-                style={{ width: '100px' }}
               />
             </div>
           ))}
         </div>
       ))}
 
-      <button onClick={saveWorkout}>Done</button>
+      <div className="btn-group" style={{ marginTop: '0.5rem' }}>
+        <button className="btn btn-success" onClick={finishWorkout} style={{ flex: 1 }}>
+          {allDone ? 'Klar' : 'Spara & Klar'}
+        </button>
+        <button className="btn btn-danger" onClick={cancelWorkout}>
+          Avbryt
+        </button>
+      </div>
     </div>
   );
 };

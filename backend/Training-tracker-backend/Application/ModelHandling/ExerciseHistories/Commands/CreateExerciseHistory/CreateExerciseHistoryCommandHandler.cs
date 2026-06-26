@@ -36,6 +36,13 @@ namespace Application.ModelHandling.ExerciseHistories.Commands.CreateExerciseHis
             CreateExerciseHistoryCommand request,
             CancellationToken cancellationToken)
         {
+            // 0. Kolla om set redan finns för detta workout-tillfälle
+            var alreadyExists = await _exerciseHistoryRepository.ExistsAsync(
+                request.WorkoutExerciseId, request.SetNumber, request.WorkoutHistoryId);
+            if (alreadyExists)
+                return OperationResult<ExerciseHistoryDto>.Failure(
+                    $"Set {request.SetNumber} is already saved for this workout exercise");
+
             // 1. Kolla om User finns
             var userExists = await _userRepository.ExistsAsync(request.UserId);
             if (!userExists)

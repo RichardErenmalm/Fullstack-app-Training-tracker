@@ -33,20 +33,31 @@ ExerciseHistory ↔ User/Exercise (many-to-one)
 
 Starta projekt
 
+Snabbstart (Windows):
+Kör start.ps1 från projektroten i en PowerShell-terminal:
+.\start.ps1
+
+Detta öppnar backend och frontend i varsitt terminalfönster automatiskt.
+
+Manuell start:
+
 Backend:
-Gå till backend-mappen i terminalen och kör:
+Gå till backend/Training-tracker-backend/API och kör:
 dotnet restore
-dotnet build
-dotnet ef database update --project Infrastructure--startup-project API
-dotnet run
+dotnet ef database update --project ../Infrastructure --startup-project .
+dotnet run --launch-profile https
+
+Backend körs på https://localhost:7026
 
 Frontend:
-Gå till frontend-mappen i terminalen och kör:
+Gå till frontend-mappen och kör:
 npm install
 npm start
 
-Miljövariabler:
-VITE_API_URL=http://localhost:5000
+Frontend körs på http://localhost:3000
+
+Miljövariabler (frontend/.env):
+REACT_APP_API_URL=https://localhost:7026/api
 
 Endpoints
 

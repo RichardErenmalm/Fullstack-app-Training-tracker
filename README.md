@@ -34,10 +34,15 @@ ExerciseHistory ↔ User/Exercise (many-to-one)
 Starta projekt
 
 Snabbstart (Windows):
-Kör start.ps1 från projektroten i en PowerShell-terminal:
+Kör följande kommandon från projektroten i en PowerShell-terminal:
+
+1. Starta backend och frontend:
 .\start.ps1
 
-Detta öppnar backend och frontend i varsitt terminalfönster automatiskt.
+2. Seeda testdata (första gången, efter att backend startat):
+.\seed.ps1
+
+Öppna sedan http://localhost:3000 i webbläsaren.
 
 Manuell start:
 
@@ -58,6 +63,17 @@ Frontend körs på http://localhost:3000
 
 Miljövariabler (frontend/.env):
 REACT_APP_API_URL=https://localhost:7026/api
+
+Seeda testdata
+
+Kör seed.ps1 från projektroten efter att databasen är skapad (kräver att backend körts minst en gång så att tabellerna finns):
+.\seed.ps1
+
+Skapar följande testdata:
+- 1 demoanvändare (demo / password123)
+- 6 övningar (Bänkpress, Knäböj, Marklyft, Axelpress, Latsdrag, Hantelcurl)
+- 3 pass (Push, Pull, Legs)
+- 3 genomförda träningssessioner med 25 loggade sets och realistisk viktprogression
 
 Endpoints
 
